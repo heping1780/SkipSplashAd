@@ -17,15 +17,13 @@ jobs:
           codesign -f -s - SkipSplashAd.dylib
       - name: Package deb
         run: |
-          mkdir -p build/DEBIAN
-          mkdir -p build/var/Library/MobileSubstrate/DynamicLibraries
-          mkdir -p build/var/mobile/Library/PreferenceLoader/Preferences
-          mkdir -p build/var/mobile/Library/PreferenceBundles/SkipSplashAd.bundle
-          cp SkipSplashAd.dylib build/var/Library/MobileSubstrate/DynamicLibraries/
-          cp SkipSplashAd.plist build/var/Library/MobileSubstrate/DynamicLibraries/
-          cp PreferenceLoader_SkipSplashAd.plist build/var/mobile/Library/PreferenceLoader/Preferences/SkipSplashAd.plist
-          cp PreferenceBundle_Root.plist build/var/mobile/Library/PreferenceBundles/SkipSplashAd.bundle/Root.plist
-          cp control build/DEBIAN/
+          mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
+          mkdir -p build/var/jb/Library/PreferenceLoader/Preferences
+          mkdir -p build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle
+          cp SkipSplashAd.dylib build/var/jb/Library/MobileSubstrate/DynamicLibraries/
+          cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
+          cp PreferenceLoader_SkipSplashAd.plist build/var/jb/Library/PreferenceLoader/Preferences/SkipSplashAd.plist
+          cp PreferenceBundle_Root.plist build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/Root.plist
           cd build/DEBIAN && tar czf ../../control.tar.gz . && cd ../..
           cd build && tar czf ../data.tar.gz var && cd ..
           echo "2.0" > debian-binary
