@@ -13,43 +13,33 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Setup Xcode
-        run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
       
-      - name: Build dylib
+      - name: Create Xcode project
+        run: |
+          mkdir -p SkipSplashAd
+          cat > SkipSplashAd/project.pbxproj << 'XCODE_EOF'
+          // Xcode project not needed for command line
+          XCODE_EOF
+      
+      - name: Build dylib with xcodebuild
+        run: |
+          xcrun clang -dynamiclib -arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -mios-version-min=15.0 -fobjc-arc -framework UIKit -framework Foundation -lobjc -o SkipSplashAd.dylib SkipSplashAd.m
+          codesign -f -s - SkipSplashAd.dylib
+          ls -la SkipSplashAd.dylib
+      
+      - name: Package deb
         run: |
           mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
-          
-          clang -dynamiclib \
-            -arch arm64 \
-            -framework UIKit \
-            -framework Foundation \
-            -lobjc \
-            -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
-            -mios-version-min=15.0 \
-            -fobjc-arc \
-            -o build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib \
-            SkipSplashAd.m
-          
-          codesign -f -s - build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib
+          cp SkipSplashAd.dylib build/var/jb/Library/MobileSubstrate/DynamicLibraries/
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
-      
-      - name: Create deb package
-        run: |
           mkdir -p build/DEBIAN
           cp control build/DEBIAN/
-          
-          cd build/DEBIAN
-          tar czf ../../control.tar.gz .
-          cd ..
-          
-          cd build
-          tar czf ../data.tar.gz var
-          cd ..
-          
+          cd build/DEBIAN && tar czf ../../control.tar.gz . && cd ../..
+          cd build && tar czf ../data.tar.gz var && cd ..
           echo "2.0" > debian-binary
           ar -rc com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb debian-binary control.tar.gz data.tar.gz
-          
           ls -lh *.deb
       
       - name: Upload artifact
