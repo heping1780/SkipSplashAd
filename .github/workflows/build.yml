@@ -17,8 +17,9 @@ jobs:
         run: |
           xcrun clang -dynamiclib -arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -mios-version-min=15.0 -fobjc-arc -framework UIKit -framework Foundation -lobjc -o SkipSplashAd.dylib SkipSplashAd.m
           codesign -f -s - SkipSplashAd.dylib
-      - name: Package deb
+      - name: Package deb (Roothide)
         run: |
+          mkdir -p build/DEBIAN
           mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
           mkdir -p build/var/jb/Library/PreferenceLoader/Preferences
           mkdir -p build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle
@@ -26,14 +27,13 @@ jobs:
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
           cp PreferenceLoader_SkipSplashAd.plist build/var/jb/Library/PreferenceLoader/Preferences/SkipSplashAd.plist
           cp PreferenceBundle_Root.plist build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/Root.plist
-          mkdir -p build/DEBIAN
           cp control build/DEBIAN/
           cd build/DEBIAN && tar czf ../../control.tar.gz . && cd ../..
           cd build && tar czf ../data.tar.gz var && cd ..
-          echo "2.0" > debian-binary
+          echo 2.0 > debian-binary
           ar -rc com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb debian-binary control.tar.gz data.tar.gz
           ls -lh *.deb
-      - name: Upload artifact
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
           name: SkipSplashAd
