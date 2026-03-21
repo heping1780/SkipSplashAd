@@ -34,53 +34,14 @@ jobs:
           codesign -f -s - build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
       
-      - name: Create default config
-        run: |
-          # 创建默认配置文件
-          mkdir -p build/var/mobile/Library/Preferences
-          cat > build/var/mobile/Library/Preferences/com.tweaks.skipsplashad.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>enabled</key>
-              <true/>
-              <key>autoClick</key>
-              <false/>
-              <key>whitelist</key>
-              <array>
-                  <string>com.apple.mobilesafari</string>
-                  <string>com.apple.Preferences</string>
-                  <string>com.apple.AppStore</string>
-                  <string>com.tencent.xin</string>
-                  <string>com.alipay.iphoneAlipay</string>
-              </array>
-              <key>blacklist</key>
-              <array/>
-              <key>customKeywords</key>
-              <array/>
-          </dict>
-          </plist>
-          EOF
-      
       - name: Create deb package
         run: |
           mkdir -p build/DEBIAN
-          cat > build/DEBIAN/control << 'EOF'
-          Package: com.tweaks.skipsplashad
-          Name: SkipSplashAd
-          Version: 1.0.0
-          Architecture: iphoneos-arm64
-          Description: Skip iOS splash ads - Dopamine compatible
-          Maintainer: YourName
-          Author: YourName
-          Section: Tweaks
-          Depends: mobilesubstrate
-          EOF
+          cp control build/DEBIAN/
           
           cd build/DEBIAN
           tar czf ../../control.tar.gz .
-          cd ../..
+          cd ..
           
           cd build
           tar czf ../data.tar.gz var
