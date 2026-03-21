@@ -2,12 +2,16 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>Filter</key>
+    <key>entry</key>
     <dict>
-        <key>Bundles</key>
-        <array>
-            <string>com.apple.UIKit</string>
-        </array>
+        <key>bundle</key>
+        <string>SkipSplashAd</string>
+        <key>cell</key>
+        <string>PSLinkCell</string>
+        <key>isController</key>
+        <true/>
+        <key>label</key>
+        <string>SkipSplashAd</string>
     </dict>
 </dict>
 </plist>
