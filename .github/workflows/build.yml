@@ -1,0 +1,49 @@
+name: Build iOS Tweak
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      
+      - name: Setup Xcode
+        run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+      
+      - name: Build dylib
+        run: |
+          mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
+          clang -dynamiclib \
+            -arch arm64 \
+            -framework UIKit \
+            -framework Foundation \
+            -lobjc \
+            -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
+            -mios-version-min=15.0 \
+            -fobjc-arc \
+            -o build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib \
+            SkipSplashAd.m
+      
+      - name: Sign dylib
+        run: codesign -f -s - build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib
+      
+      - name: Copy files
+        run: |
+          mkdir -p build/DEBIAN
+          cp control build/DEBIAN/
+          cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
+      
+      - name: Build deb
+        run: dpkg-deb --build build com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
+      
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkipSplashAd
+          path: com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
