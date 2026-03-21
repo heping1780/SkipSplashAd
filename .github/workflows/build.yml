@@ -24,11 +24,24 @@ jobs:
       
       - name: Package deb
         run: |
+          # 主插件
           mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
           cp SkipSplashAd.dylib build/var/jb/Library/MobileSubstrate/DynamicLibraries/
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
+          
+          # PreferenceLoader 入口
+          mkdir -p build/var/jb/Library/PreferenceLoader/Preferences
+          cp PreferenceLoader_SkipSplashAd.plist build/var/jb/Library/PreferenceLoader/Preferences/SkipSplashAd.plist
+          
+          # PreferenceBundle
+          mkdir -p build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle
+          cp PreferenceBundle_Root.plist build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/Root.plist
+          
+          # DEBIAN
           mkdir -p build/DEBIAN
           cp control build/DEBIAN/
+          
+          # 打包
           cd build/DEBIAN && tar czf ../../control.tar.gz . && cd ../..
           cd build && tar czf ../data.tar.gz var && cd ..
           echo "2.0" > debian-binary
