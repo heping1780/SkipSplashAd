@@ -13,12 +13,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
       
-      - name: Setup Xcode
-        run: sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
-      
-      - name: Build dylib
+      - name: Install Theos
         run: |
-          mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
+          export THEOS=~/theos
+          git clone --recursive https://github.com/theos/theos.git $THEOS
+          echo "THEOS=$THEOS" >> $GITHUB_ENV
+      
+      - name: Build with Theos
+        run: |
+          export THEOS=~/theos
+          export PATH=$THEOS/bin:$PATH
+          
+          # 创建 layout 目录结构
+          mkdir -p layout/var/jb/Library/MobileSubstrate/DynamicLibraries
+          
+          # 编译 dylib
           clang -dynamiclib \
             -arch arm64 \
             -framework UIKit \
@@ -27,20 +36,40 @@ jobs:
             -isysroot $(xcrun --sdk iphoneos --show-sdk-path) \
             -mios-version-min=15.0 \
             -fobjc-arc \
-            -o build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib \
+            -install_name @rpath/SkipSplashAd.dylib \
+            -o layout/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib \
             SkipSplashAd.m
+          
+          # 签名
+          codesign -f -s - layout/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib
+          
+          # 复制 plist
+          cp SkipSplashAd.plist layout/var/jb/Library/MobileSubstrate/DynamicLibraries/
       
-      - name: Sign dylib
-        run: codesign -f -s - build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib
-      
-      - name: Copy files
+      - name: Create DEBIAN structure
         run: |
-          mkdir -p build/DEBIAN
-          cp control build/DEBIAN/
-          cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
+          mkdir -p layout/DEBIAN
+          cp control layout/DEBIAN/
       
-      - name: Build deb
-        run: dpkg-deb --build build com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
+      - name: Build deb package
+        run: |
+          # 使用 dpkg-deb 或手动打包
+          if command -v dpkg-deb &> /dev/null; then
+            dpkg-deb --build layout com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
+          else
+            # 手动创建 deb
+            mkdir -p debian/DEBIAN
+            cp control debian/DEBIAN/
+            mkdir -p debian/var/jb/Library/MobileSubstrate/DynamicLibraries
+            cp layout/var/jb/Library/MobileSubstrate/DynamicLibraries/* debian/var/jb/Library/MobileSubstrate/DynamicLibraries/
+            
+            # 使用 ar 创建 deb
+            cd debian && tar czf ../data.tar.gz var && tar czf ../control.tar.gz DEBIAN
+            cd ..
+            echo "2.0" > debian-binary
+            ar r com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb debian-binary control.tar.gz data.tar.gz
+          fi
+          ls -lh *.deb
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
