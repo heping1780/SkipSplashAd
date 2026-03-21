@@ -1,0 +1,9 @@
+Package: com.tweaks.skipsplashad
+Name: SkipSplashAd
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: 跳过iOS应用开屏广告 - Dopamine无根越狱专用
+Maintainer: YourName
+Author: YourName
+Section: Tweaks
+Depends: mobilesubstrate (>= 0.9.5000)
