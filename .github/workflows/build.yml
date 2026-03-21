@@ -1,27 +1,22 @@
-yaml
-name: Build iOS Tweak
 
+```yaml
+name: Build iOS Tweak
 on:
   push:
     branches: [main]
   workflow_dispatch:
-
 jobs:
   build:
     runs-on: macos-latest
-    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
-      
       - name: Build dylib
         run: |
           xcrun clang -dynamiclib -arch arm64 -isysroot $(xcrun --sdk iphoneos --show-sdk-path) -mios-version-min=15.0 -fobjc-arc -framework UIKit -framework Foundation -lobjc -o SkipSplashAd.dylib SkipSplashAd.m
           codesign -f -s - SkipSplashAd.dylib
-      
       - name: Package deb
         run: |
           mkdir -p build/DEBIAN
@@ -38,10 +33,9 @@ jobs:
           echo "2.0" > debian-binary
           ar -rc com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb debian-binary control.tar.gz data.tar.gz
           ls -lh *.deb
-      
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: SkipSplashAd
-          path: com.tweaks.skipsplas
-had_1.0.0_iphoneos-arm64.deb
+          path: com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
+```
