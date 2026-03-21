@@ -34,9 +34,29 @@ jobs:
           codesign -f -s - build/var/jb/Library/MobileSubstrate/DynamicLibraries/SkipSplashAd.dylib
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
       
+      - name: Create PreferenceBundle
+        run: |
+          mkdir -p build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle
+          cp Root.plist build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/
+          
+          # 创建简单的设置入口 plist
+          cat > build/var/jb/Library/PreferenceLoader/Preferences/SkipSplashAd.plist << 'EOF'
+          {
+              filter = {
+                  bundles = ("com.apple.Preferences");
+              };
+              entry = {
+                  bundle = SkipSplashAd;
+                  cell = PSLinkCell;
+                  icon = "/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/icon@2x.png";
+                  isController = 1;
+                  label = SkipSplashAd;
+              };
+          }
+          EOF
+      
       - name: Create deb package
         run: |
-          # 创建 DEBIAN 目录
           mkdir -p build/DEBIAN
           cp control build/DEBIAN/
           
@@ -45,22 +65,15 @@ jobs:
           tar czf ../../control.tar.gz .
           cd ../..
           
-          # 创建 data.tar.gz (不包含 DEBIAN)
+          # 创建 data.tar.gz
           cd build
           tar czf ../data.tar.gz var
           cd ..
           
-          # 创建 debian-binary
           echo "2.0" > debian-binary
-          
-          # 使用 ar 创建 deb 包 (注意顺序)
           ar -rc com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb debian-binary control.tar.gz data.tar.gz
           
-          # 验证 deb
-          echo "=== Deb 包内容 ==="
-          ar -t com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
-          echo "=== 文件大小 ==="
-          ls -lh com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb
+          ls -lh *.deb
       
       - name: Upload artifact
         uses: actions/upload-artifact@v4
