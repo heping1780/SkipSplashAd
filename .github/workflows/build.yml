@@ -1,4 +1,4 @@
-```yaml
+yaml
 name: Build iOS Tweak
 
 on:
@@ -45,4 +45,3 @@ jobs:
           name: SkipSplashAd
           path: com.tweaks.skipsplas
 had_1.0.0_iphoneos-arm64.deb
-```
