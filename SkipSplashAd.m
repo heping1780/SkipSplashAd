@@ -1,6 +1,6 @@
 //
 //  SkipSplashAd.m
-// 暴力点击跳过按钮
+// 暴力10秒扫描点击
 //
 
 #import <UIKit/UIKit.h>
@@ -35,13 +35,12 @@ static void clickAllSkipButtons(UIView *view) {
         NSString *title = [btn titleForState:UIControlStateNormal] ?: @"";
         NSString *titleHigh = [btn titleForState:UIControlStateHighlighted] ?: @"";
         
-        NSArray *skipWords = @[@"跳过", @"Skip", @"skip", @"SKIP", @"跳过广告", @"关闭", @"X", @"×", @"close", @"CLOSE", @"倒计时"];
+        NSArray *skipWords = @[@"跳过", @"Skip", @"skip", @"SKIP", @"跳过广告", @"关闭", @"X", @"×", @"close", @"CLOSE", @"倒计时", @"广告"];
         
         for (NSString *word in skipWords) {
             if ([title containsString:word] || [titleHigh containsString:word]) {
                 Log(@"点击: %@", title);
                 [btn sendActionsForControlEvents:UIControlEventTouchUpInside];
-                break;
             }
         }
     }
@@ -54,7 +53,7 @@ static void clickAllSkipButtons(UIView *view) {
 static void scanAndClick() {
     if (isWhitelistApp()) return;
     
-    Log(@"扫描...");
+    Log(@"扫描10秒...");
     
     NSArray *windows = [[UIApplication sharedApplication] windows];
     for (UIWindow *win in windows) {
@@ -66,13 +65,15 @@ static void scanAndClick() {
 
 __attribute__((constructor))
 static void init() {
-    Log(@"SkipSplashAd 加载");
+    Log(@"SkipSplashAd 10秒版加载");
     
+    // 0.1秒开始扫描
     dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
         scanAndClick();
     });
     
-    for (int i = 1; i <= 6; i++) {
+    // 持续扫描10秒，每0.5秒一次
+    for (int i = 1; i <= 20; i++) {
         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, i * 0.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
             scanAndClick();
         });
