@@ -1,4 +1,6 @@
 name: Build iOS Tweak
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 on:
   push:
     branches: [main]
@@ -24,6 +26,8 @@ jobs:
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
           cp PreferenceLoader_SkipSplashAd.plist build/var/jb/Library/PreferenceLoader/Preferences/SkipSplashAd.plist
           cp PreferenceBundle_Root.plist build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/Root.plist
+          mkdir -p build/DEBIAN
+          cp control build/DEBIAN/
           cd build/DEBIAN && tar czf ../../control.tar.gz . && cd ../..
           cd build && tar czf ../data.tar.gz var && cd ..
           echo "2.0" > debian-binary
