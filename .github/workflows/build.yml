@@ -12,8 +12,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
       
       - name: Select Xcode
         run: sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
@@ -26,27 +24,13 @@ jobs:
       
       - name: Package deb
         run: |
-          # 主插件
           mkdir -p build/var/jb/Library/MobileSubstrate/DynamicLibraries
           cp SkipSplashAd.dylib build/var/jb/Library/MobileSubstrate/DynamicLibraries/
           cp SkipSplashAd.plist build/var/jb/Library/MobileSubstrate/DynamicLibraries/
-          
-          # PreferenceLoader 入口
-          mkdir -p build/var/jb/Library/PreferenceLoader/Preferences
-          cp var/jb/Library/PreferenceLoader/Preferences/SkipSplashAd.plist build/var/jb/Library/PreferenceLoader/Preferences/
-          
-          # PreferenceBundle
-          mkdir -p build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle
-          cp var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/Root.plist build/var/jb/Library/PreferenceBundles/SkipSplashAd.bundle/
-          
-          # DEBIAN
           mkdir -p build/DEBIAN
           cp control build/DEBIAN/
-          
-          # 创建 tar
           cd build/DEBIAN && tar czf ../../control.tar.gz . && cd ../..
           cd build && tar czf ../data.tar.gz var && cd ..
-          
           echo "2.0" > debian-binary
           ar -rc com.tweaks.skipsplashad_1.0.0_iphoneos-arm64.deb debian-binary control.tar.gz data.tar.gz
           ls -lh *.deb
