@@ -1,6 +1,6 @@
 //
 //  SkipSplashAd.m
-//  2秒内检测"跳过"按钮并点击
+// 暴力点击跳过按钮
 //
 
 #import <UIKit/UIKit.h>
@@ -15,12 +15,10 @@
 
 static NSArray *whitelist = @[
     @"com.apple.mobilesafari",
-    @"com.apple.Preferences",
     @"com.tencent.xin",
     @"com.alipay.iphoneAlipay"
 ];
 
-// 检测应用是否在白名单
 static BOOL isWhitelistApp() {
     NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
     for (NSString *white in whitelist) {
@@ -29,89 +27,54 @@ static BOOL isWhitelistApp() {
     return NO;
 }
 
-// 查找并点击"跳过"按钮
-static void clickSkipButton(UIView *view) {
+static void clickAllSkipButtons(UIView *view) {
     if (!view) return;
     
-    // 检查是否是按钮
     if ([view isKindOfClass:[UIButton class]]) {
         UIButton *btn = (UIButton *)view;
         NSString *title = [btn titleForState:UIControlStateNormal] ?: @"";
-        NSString *titleHighlighted = [btn titleForState:UIControlStateHighlighted] ?: @"";
+        NSString *titleHigh = [btn titleForState:UIControlStateHighlighted] ?: @"";
         
-        // 检查标题是否包含跳过相关文字
-        NSArray *skipTexts = @[@"跳过", @"Skip", @"skip", @"SKIP", @"跳过广告", @"跳过倒计时", @"seconds"];
+        NSArray *skipWords = @[@"跳过", @"Skip", @"skip", @"SKIP", @"跳过广告", @"关闭", @"X", @"×", @"close", @"CLOSE", @"倒计时"];
         
-        for (NSString *text in skipTexts) {
-            if ([title containsString:text] || [titleHighlighted containsString:text]) {
-                Log(@"找到跳过按钮: %@", title);
+        for (NSString *word in skipWords) {
+            if ([title containsString:word] || [titleHigh containsString:word]) {
+                Log(@"点击: %@", title);
                 [btn sendActionsForControlEvents:UIControlEventTouchUpInside];
-                return;
+                break;
             }
         }
     }
     
-    // 递归检查子视图
     for (UIView *subview in view.subviews) {
-        clickSkipButton(subview);
+        clickAllSkipButtons(subview);
     }
 }
 
-// 遍历视图找跳过按钮
-static void findAndClickSkip(UIView *view, int depth) {
-    if (!view || depth > 8) return;
+static void scanAndClick() {
+    if (isWhitelistApp()) return;
     
-    clickSkipButton(view);
+    Log(@"扫描...");
     
-    for (UIView *subview in view.subviews) {
-        findAndClickSkip(subview, depth + 1);
+    NSArray *windows = [[UIApplication sharedApplication] windows];
+    for (UIWindow *win in windows) {
+        if (!win.hidden) {
+            clickAllSkipButtons(win);
+        }
     }
-}
-
-// 启动检测（只在开屏2秒内检测）
-static void startSkipDetection() {
-    if (isWhitelistApp()) {
-        Log(@"白名单应用，跳过检测");
-        return;
-    }
-    
-    Log(@"开始检测跳过按钮...");
-    
-    // 立即检测一次
-    dispatch_async(dispatch_get_main_queue(), ^{
-        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
-            findAndClickSkip(win, 0);
-        }
-    });
-    
-    // 0.5秒后再检测一次
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
-            findAndClickSkip(win, 0);
-        }
-    });
-    
-    // 1秒后再检测一次
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
-            findAndClickSkip(win, 0);
-        }
-    });
-    
-    // 2秒后再检测一次（最后机会）
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
-            findAndClickSkip(win, 0);
-        }
-    });
 }
 
 __attribute__((constructor))
 static void init() {
-    Log(@"SkipSplashAd loaded - 2秒点击模式");
+    Log(@"SkipSplashAd 加载");
     
-    // 应用启动时延迟检测
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        startSkipDetection();
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.1 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        scanAndClick();
     });
+    
+    for (int i = 1; i <= 6; i++) {
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, i * 0.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            scanAndClick();
+        });
+    }
 }
