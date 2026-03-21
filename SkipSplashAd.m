@@ -1,6 +1,6 @@
 //
 //  SkipSplashAd.m
-//  Simple version
+//  2秒内检测"跳过"按钮并点击
 //
 
 #import <UIKit/UIKit.h>
@@ -13,69 +13,105 @@
 #define Log(fmt, ...)
 #endif
 
-static NSArray *skipKeywords = @[
-    @"splash", @"Splash", @"launchAd", @"ADView", @"advertisement", @"GDTSplashAd"
-];
-
 static NSArray *whitelist = @[
-    @"com.apple.mobilesafari", @"com.tencent.xin", @"com.alipay.iphoneAlipay"
+    @"com.apple.mobilesafari",
+    @"com.apple.Preferences",
+    @"com.tencent.xin",
+    @"com.alipay.iphoneAlipay"
 ];
 
-static BOOL shouldSkipApp() {
+// 检测应用是否在白名单
+static BOOL isWhitelistApp() {
     NSString *bundleId = [[NSBundle mainBundle] bundleIdentifier];
     for (NSString *white in whitelist) {
-        if ([bundleId isEqualToString:white]) return NO;
+        if ([bundleId isEqualToString:white]) return YES;
     }
-    return YES;
+    return NO;
 }
 
-static void hideAdView(UIView *view, int depth) {
+// 查找并点击"跳过"按钮
+static void clickSkipButton(UIView *view) {
+    if (!view) return;
+    
+    // 检查是否是按钮
+    if ([view isKindOfClass:[UIButton class]]) {
+        UIButton *btn = (UIButton *)view;
+        NSString *title = [btn titleForState:UIControlStateNormal] ?: @"";
+        NSString *titleHighlighted = [btn titleForState:UIControlStateHighlighted] ?: @"";
+        
+        // 检查标题是否包含跳过相关文字
+        NSArray *skipTexts = @[@"跳过", @"Skip", @"skip", @"SKIP", @"跳过广告", @"跳过倒计时", @"seconds"];
+        
+        for (NSString *text in skipTexts) {
+            if ([title containsString:text] || [titleHighlighted containsString:text]) {
+                Log(@"找到跳过按钮: %@", title);
+                [btn sendActionsForControlEvents:UIControlEventTouchUpInside];
+                return;
+            }
+        }
+    }
+    
+    // 递归检查子视图
+    for (UIView *subview in view.subviews) {
+        clickSkipButton(subview);
+    }
+}
+
+// 遍历视图找跳过按钮
+static void findAndClickSkip(UIView *view, int depth) {
     if (!view || depth > 8) return;
     
-    NSString *className = NSStringFromClass([view class]);
-    CGRect frame = view.frame;
-    BOOL isFullScreen = (frame.size.width >= [UIScreen mainScreen].bounds.size.width * 0.9 && 
-                         frame.size.height >= [UIScreen mainScreen].bounds.size.height * 0.9);
+    clickSkipButton(view);
     
-    BOOL isAd = NO;
-    for (NSString *kw in skipKeywords) {
-        if ([className containsString:kw]) { isAd = YES; break; }
-    }
-    
-    if ((isAd || isFullScreen) && shouldSkipApp() && ![className containsString:@"LaunchScreen"]) {
-        view.alpha = 0;
-        view.userInteractionEnabled = NO;
-        Log(@"Hidden: %@", className);
-    }
-    
-    for (UIView *sub in view.subviews) {
-        hideAdView(sub, depth + 1);
+    for (UIView *subview in view.subviews) {
+        findAndClickSkip(subview, depth + 1);
     }
 }
 
-static void startKiller() {
-    static dispatch_source_t timer = nil;
-    if (timer) return;
+// 启动检测（只在开屏2秒内检测）
+static void startSkipDetection() {
+    if (isWhitelistApp()) {
+        Log(@"白名单应用，跳过检测");
+        return;
+    }
     
-    timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-    dispatch_source_set_timer(timer, DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC, 0.1 * NSEC_PER_SEC);
+    Log(@"开始检测跳过按钮...");
     
-    dispatch_source_set_event_handler(timer, ^{
-        @try {
-            for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
-                if (!win.hidden) hideAdView(win, 0);
-            }
-        } @catch (NSException *e) { Log(@"Error: %@", e); }
+    // 立即检测一次
+    dispatch_async(dispatch_get_main_queue(), ^{
+        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
+            findAndClickSkip(win, 0);
+        }
     });
     
-    dispatch_resume(timer);
-    Log(@"Started");
+    // 0.5秒后再检测一次
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.5 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
+            findAndClickSkip(win, 0);
+        }
+    });
+    
+    // 1秒后再检测一次
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
+            findAndClickSkip(win, 0);
+        }
+    });
+    
+    // 2秒后再检测一次（最后机会）
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2.0 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        for (UIWindow *win in [[UIApplication sharedApplication] windows]) {
+            findAndClickSkip(win, 0);
+        }
+    });
 }
 
 __attribute__((constructor))
 static void init() {
-    Log(@"SkipSplashAd loaded");
-    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
-        startKiller();
+    Log(@"SkipSplashAd loaded - 2秒点击模式");
+    
+    // 应用启动时延迟检测
+    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 0.3 * NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+        startSkipDetection();
     });
 }
