@@ -1,0 +1,9 @@
+Package: com.tweaks.autoclick
+Name: AutoClick
+Version: 1.0.0
+Architecture: iphoneos-arm64
+Description: 自动点击插件 - 支持文字/控件/坐标模式
+Maintainer: YourName
+Author: YourName
+Section: Tweaks
+Depends: mobilesubstrate
